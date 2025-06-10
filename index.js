@@ -41,8 +41,8 @@ passport.use(new GoogleStrategy({
 }, (accessToken, refreshToken, profile, done) => {
   const email = profile.emails && profile.emails[0].value;
   if (allowedEmails.includes(email)) {
-    return done(null, profile);
     loadAssets();
+    return done(null, profile);
   }
   return done(null, false, { message: 'Du har inte behörighet.' });
 }));
