@@ -52,3 +52,20 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Servern körs på port ${PORT}`);
 });
+
+async function handleCredentialResponse(response) {
+  const idToken = response.credential;
+  const res = await fetch('/verify-token', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ idToken }),
+  });
+  const result = await res.json();
+
+  if (result.success) {
+    document.getElementById("dashboard").style.display = "block";
+    document.getElementById("login").style.display = "none";
+  } else {
+    alert("Du har inte behörighet.");
+  }
+}
