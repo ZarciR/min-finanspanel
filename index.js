@@ -1,15 +1,19 @@
 const express = require('express');
+const session = require('express-session');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const cookieSession = require('cookie-session');
 require('dotenv').config();
 
 const app = express();
 
-app.use(cookieSession({
-  name: 'session',
-  keys: ['secret'],
-  maxAge: 24 * 60 * 60 * 1000
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'hemlig-session',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false, // sätt till true om du kör HTTPS (Render hanterar ofta HTTPS ändå)
+    maxAge: 24 * 60 * 60 * 1000 // 1 dag
+  }
 }));
 
 app.use(passport.initialize());
@@ -18,6 +22,7 @@ app.use(passport.session());
 passport.serializeUser((user, done) => {
   done(null, user);
 });
+
 passport.deserializeUser((user, done) => {
   done(null, user);
 });
