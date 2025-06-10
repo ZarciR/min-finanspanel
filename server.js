@@ -15,7 +15,7 @@ app.post('/verify-token', async (req, res) => {
   try {
     const ticket = await client.verifyIdToken({
       idToken,
-      audience: '<DIN_GOOGLE_CLIENT_ID>', // samma som i frontend
+      audience: 'env.GOOGLE_CLIENT_ID', // samma som i frontend
     });
     const payload = ticket.getPayload();
 
