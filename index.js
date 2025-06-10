@@ -42,6 +42,7 @@ passport.use(new GoogleStrategy({
   const email = profile.emails && profile.emails[0].value;
   if (allowedEmails.includes(email)) {
     return done(null, profile);
+    loadAssets();
   }
   return done(null, false, { message: 'Du har inte behörighet.' });
 }));
@@ -54,6 +55,7 @@ app.get('/auth/google/callback',
   passport.authenticate('google', { failureRedirect: '/no-access' }),
   (req, res) => {
     res.send(`Hej ${req.user.displayName}, du är inloggad!`);
+    
   }
 );
 
@@ -69,3 +71,16 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Servern körs på port ${PORT}`);
 });
+
+async function loadAssets() {
+  const res = await fetch('/assets');
+  const data = await res.json();
+
+  const tbody = document.getElementById('assets-table');
+  tbody.innerHTML = '';
+  data.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${row.kategori}</td><td>${row.värde}</td>`;
+    tbody.appendChild(tr);
+  });
+}
