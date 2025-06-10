@@ -1,18 +1,25 @@
-const express = require('express');
-const session = require('express-session');
-const passport = require('passport');
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
-require('dotenv').config();
+import express from 'express';
+import session from 'express-session';
+import passport from 'passport';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express();
+
+// Hämta tillåtna e-postadresser från miljövariabel, kommaseparerat
+const allowedEmails = process.env.ALLOWED_EMAIL
+  ? process.env.ALLOWED_EMAIL.split(',').map(email => email.trim())
+  : [];
 
 app.use(session({
   secret: process.env.SESSION_SECRET || 'hemlig-session',
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false, // sätt till true om du kör HTTPS (Render hanterar ofta HTTPS ändå)
-    maxAge: 24 * 60 * 60 * 1000 // 1 dag
+    secure: false,
+    maxAge: 24 * 60 * 60 * 1000
   }
 }));
 
@@ -32,17 +39,27 @@ passport.use(new GoogleStrategy({
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
   callbackURL: "https://min-finanspanel.onrender.com/auth/google/callback"
 }, (accessToken, refreshToken, profile, done) => {
-  return done(null, profile);
+  const email = profile.emails && profile.emails[0].value;
+  if (allowedEmails.includes(email)) {
+    return done(null, profile);
+  }
+  return done(null, false, { message: 'Du har inte behörighet.' });
 }));
 
 app.get('/auth/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] }));
+  passport.authenticate('google', { scope: ['profile', 'email'] })
+);
 
 app.get('/auth/google/callback',
-  passport.authenticate('google', { failureRedirect: '/' }),
+  passport.authenticate('google', { failureRedirect: '/no-access' }),
   (req, res) => {
     res.send(`Hej ${req.user.displayName}, du är inloggad!`);
-  });
+  }
+);
+
+app.get('/no-access', (req, res) => {
+  res.send('Du har inte behörighet att logga in.');
+});
 
 app.get('/', (req, res) => {
   res.send('<a href="/auth/google">Logga in med Google</a>');
