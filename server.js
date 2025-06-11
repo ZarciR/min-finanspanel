@@ -43,17 +43,38 @@ app.listen(PORT, () => {
 app.get('/assets', async (req, res) => {
   try {
     const spreadsheetId = '1ELlHaXDHuEKQ5-7gN3mXE1Nnei-uDEEiXJKACKNRXyA';
-    const range = 'Tillgångar/Skulder!A2:B';
+    const range = 'Tillgångar/Skulder!A1:Z';
     const result = await sheets.spreadsheets.values.get({ spreadsheetId, range });
 
-    const data = (result.data.values || []).map(([kategori, värde]) => ({
-      kategori,
-      värde,
-    }));
+    const rows = result.data.values || [];
 
-    res.json(data);
+    const header = rows[0];
+    const tillgångsbeloppIndex = header.indexOf('Tillgångsbelopp');
+    const bolagPrivatIndex = header.indexOf('Bolag/Privat');
+    const datumIndex = header.indexOf('Uppdateringsdatum');
+
+    const cleanValue = (val) => {
+      if (!val) return 0;
+      return parseInt(val.replace(/\s|kr|−/g, '').replace(',', '.'), 10) || 0;
+    };
+
+    const assets = [];
+
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      const belopp = cleanValue(row[tillgångsbeloppIndex]);
+      const typ = row[bolagPrivatIndex] || 'Okänd';
+      const datum = row[datumIndex] || '';
+
+      if (belopp !== 0) {
+        assets.push({ typ, belopp, datum });
+      }
+    }
+
+    res.json({ total: assets.reduce((a, b) => a + b.belopp, 0), assets });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Kunde inte hämta data' });
+    res.status(500).json({ error: 'Kunde inte hämta tillgångar' });
   }
 });
+
