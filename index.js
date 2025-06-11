@@ -74,13 +74,16 @@ app.listen(PORT, () => {
 
 async function loadAssets() {
   const res = await fetch('/assets');
-  const data = await res.json();
+  const { total, assets } = await res.json();
+
+  document.getElementById('total-value').textContent = `${total.toLocaleString('sv-SE')} kr`;
 
   const tbody = document.getElementById('assets-table');
   tbody.innerHTML = '';
-  data.forEach(row => {
+  assets.forEach(({ typ, belopp, datum }) => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${row.kategori}</td><td>${row.värde}</td>`;
+    tr.innerHTML = `<td>${typ}</td><td>${belopp.toLocaleString('sv-SE')} kr</td><td>${datum}</td>`;
     tbody.appendChild(tr);
   });
 }
+
